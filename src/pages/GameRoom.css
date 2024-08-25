@@ -1,0 +1,79 @@
+.game-room {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.game-table {
+  position: relative;
+  width: 600px;
+  height: 400px;
+  background-color: #076324;
+  border-radius: 200px;
+  margin: 50px auto;
+  padding: 20px;
+}
+
+.player {
+  position: absolute;
+  width: 150px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.player-0 { bottom: 0; left: 50%; transform: translateX(-50%); }
+.player-1 { top: 50%; left: 0; transform: translateY(-50%); }
+.player-2 { top: 0; left: 50%; transform: translateX(-50%); }
+
+.current-turn {
+  box-shadow: 0 0 10px 5px gold;
+}
+
+.cards {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.card {
+  width: 40px;
+  height: 60px;
+  background-color: white;
+  border: 1px solid black;
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 5px;
+}
+
+.community-cards {
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pot {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+}
+
+.player-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.player-actions button, .player-actions input {
+  margin: 0 5px;
+  padding: 10px;
+}
