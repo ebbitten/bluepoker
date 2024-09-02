@@ -6,10 +6,25 @@ const Game = sequelize.define('Game', {
     primaryKey: true,
   },
   status: {
-    type: DataTypes.STRING,
+    type: DataTypes.ENUM('waiting', 'playing', 'ended'),
     allowNull: false,
+    defaultValue: 'waiting',
   },
-  // Add other game properties here
+  maxPlayers: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 9,
+  },
+  smallBlind: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 10,  // Set a default value for smallBlind
+  },
+  bigBlind: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 20,  // It's common to have bigBlind as double the smallBlind
+  },
 });
 
 module.exports = Game;

@@ -1,4 +1,5 @@
 const Deck = require('./Deck'); // We'll create this next
+const pokerHandEvaluator = require('../utils/pokerHandEvaluator');
 
 class GameLogic {
   constructor(id, maxPlayers = 9, smallBlind = 10, bigBlind = 20) {
@@ -131,9 +132,71 @@ class GameLogic {
   }
 
   handleShowdown() {
-    // Implement showdown logic here
-    // Compare hands, determine winner(s), distribute pot
+    const activePlayersWithHands = this.players.filter(player => !player.folded);
+    const winningPlayers = this.determineWinners(activePlayersWithHands);
+    this.distributePot(winningPlayers);
     this.status = 'ended';
+  }
+
+  determineWinners(players) {
+    const playerHands = players.map(player => ({
+      player,
+      hand: [...player.cards, ...this.communityCards],
+      handRank: pokerHandEvaluator.evaluateHand([...player.cards, ...this.communityCards])
+    }));
+
+    playerHands.sort((a, b) => b.handRank - a.handRank);
+    const highestRank = playerHands[0].handRank;
+
+    return playerHands
+      .filter(ph => ph.handRank === highestRank)
+      .map(ph => ph.player);
+  }
+
+  distributePot(winners) {
+    const winAmount = Math.floor(this.pot / winners.length);
+    winners.forEach(winner => {
+      winner.chips += winAmount;
+    });
+    this.pot = 0;
+  }
+
+  prepareNextRound() {
+    this.communityCards = [];
+    this.pot = 0;
+    this.currentBet = 0;
+    this.lastRaiseIndex = -1;
+    this.deck = new Deck();
+    this.deck.shuffle();
+
+    // Move dealer button
+    this.dealerIndex = (this.dealerIndex + 1) % this.players.length;
+    this.smallBlindIndex = (this.dealerIndex + 1) % this.players.length;
+    this.bigBlindIndex = (this.dealerIndex + 2) % this.players.length;
+
+    // Reset player states
+    this.players.forEach(player => {
+      player.folded = false;
+      player.allIn = false;
+      player.currentBet = 0;
+      player.cards = [];
+    });
+
+    // Remove players with no chips
+    this.players = this.players.filter(player => player.chips > 0);
+
+    if (this.players.length >= 2) {
+      this.startGame();
+    } else {
+      this.status = 'waiting';
+    }
+  }
+
+  isRoundComplete() {
+    const activePlayers = this.getActivePlayers();
+    return activePlayers.length === 1 || 
+           (this.currentPlayerIndex === this.lastRaiseIndex && 
+            activePlayers.every(player => player.currentBet === this.currentBet));
   }
 
   getActivePlayers() {

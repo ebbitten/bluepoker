@@ -1,18 +1,19 @@
 class Card {
-  constructor(rank, suit) {
-    this.rank = rank;
+  constructor(suit, rank) {
     this.suit = suit;
+    this.rank = rank;
   }
 }
 
 class Deck {
   constructor() {
     this.cards = [];
+    const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
     const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-    const suits = ['♠', '♥', '♦', '♣'];
+
     for (let suit of suits) {
       for (let rank of ranks) {
-        this.cards.push(new Card(rank, suit));
+        this.cards.push(new Card(suit, rank));
       }
     }
   }
@@ -25,8 +26,12 @@ class Deck {
   }
 
   drawCard() {
+    if (this.cards.length === 0) {
+      throw new Error('No cards left in the deck');
+    }
     return this.cards.pop();
   }
 }
 
 module.exports = Deck;
+

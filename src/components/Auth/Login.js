@@ -1,26 +1,22 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { api } from '../../services/api';
 
-function Login() {
+function Login({ onLoginSuccess }) {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
-  const navigate = useNavigate();
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Mock login - accept any non-empty username and password
-    if (credentials.username && credentials.password) {
-      console.log('Login successful', credentials);
-      // Store user info in localStorage (not secure, but okay for testing)
-      localStorage.setItem('user', JSON.stringify({ id: 1, username: credentials.username }));
-      localStorage.setItem('token', 'mock-jwt-token');
-      // Redirect to lobby
-      navigate('/lobby');
-    } else {
-      alert('Please enter both username and password');
+    setError('');
+    try {
+      const response = await api.login(credentials);
+      onLoginSuccess(response.data.token);
+    } catch (error) {
+      setError(error.response?.data?.error || 'An error occurred during login');
     }
   };
 
@@ -28,10 +24,11 @@ function Login() {
     <div>
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
-        <input type="text" name="username" placeholder="Username" onChange={handleChange} />
-        <input type="password" name="password" placeholder="Password" onChange={handleChange} />
+        <input type="text" name="username" placeholder="Username" onChange={handleChange} required />
+        <input type="password" name="password" placeholder="Password" onChange={handleChange} required />
         <button type="submit">Login</button>
       </form>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
 }
