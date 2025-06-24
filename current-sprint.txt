@@ -1,0 +1,35 @@
+CURRENT SPRINT - Increment 0: Build & Tooling Skeleton
+=====================================================
+
+GOAL: Empty monorepo compiles, lints, tests, and shows Next.js splash screen with local Supabase
+
+MUST COMPLETE THIS SPRINT:
+- [ ] Create monorepo structure: packages/app, packages/shared
+- [ ] Setup pnpm workspace with root pnpm-workspace.yaml
+- [ ] Create shared tsconfig.base.json for TypeScript configuration
+- [ ] Initialize packages/app with Next.js 15 (App Router, React 19)
+- [ ] Initialize packages/shared with cross-cutting TypeScript utilities
+- [ ] Setup Supabase local development (supabase start)
+- [ ] Configure migration-first DB workflow with auto type-gen
+- [ ] Setup Tailwind CSS + shadcn/ui component library
+- [ ] Configure ESLint (typescript-eslint + security) + Prettier + Husky
+- [ ] Setup GitHub Actions CI pipeline (ci.yml)
+- [ ] Ensure "Hello Poker" displays at localhost:3000 with Turbopack
+- [ ] Verify pnpm install && pnpm test opens Vitest UI
+
+ACCEPTANCE CRITERIA:
+✓ Monorepo compiles without errors
+✓ All linting rules pass (ESLint + security plugin)
+✓ CI pipeline runs successfully
+✓ Next.js dev server starts with Turbopack hot-reload
+✓ Supabase local stack runs (supabase start)
+✓ Landing page renders "Hello Poker" at localhost:3000
+✓ Pre-commit hook runs lint + typecheck + test
+
+DEFINITION OF DONE:
+- Directory structure: packages/app + packages/shared
+- pnpm dev starts Next.js with --turbo flag
+- pnpm test opens Vitest UI
+- Supabase migrations and type-gen workflow configured
+- Tailwind CSS + shadcn/ui ready for components
+- GitHub Action: install → lint → typecheck → test → Next.js build

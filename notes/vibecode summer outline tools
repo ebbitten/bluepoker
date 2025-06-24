@@ -1,0 +1,79 @@
+VSCode + Cline + Gemini 2.5 pro
+Claude Code + Gemini 2.5 Pro MCP (for planning) + Aider MCP + Gemini 2.5 Pro (for editing)
+Cline & Gemini 2.5 Pro is pretty unbelievable. I imagine with Aider, Claude Code and Cursor it's more or less the same.
+
+Gemini 2.5 Pro is excellent for code. We've been really happy with it. I've been doing Aider with Sonnet 3.5 and 3.7 for the past year and that's been excellent, but using Gemini 2.5 Pro with Cline is just a huge step up. I mean, a big part of it is Cline, but 2.5 Pro is pretty excellent for plan and act.
+
+
+Next.js (for frontend and APIs) + Supabase (for database and authentication) + Tailwind CSS (for styling) + Vercel (for hosting).
+
+6. Maintain an Instructions Folder
+Always have an instructions folder. It should have markdown files. It should be full of docs-example components to provide to the Ai to guide it better or use (or context7 mcp, it has a tons of documentation).
+
+
+DE: Cursor with Claude Opus 4 - the autocomplete and chat integration is unmatched for flow state coding
+
+AI Assistant: Claude 4 Opus for complex architecture decisions, GPT-4o for quick debugging. I use DeepSeek when I need to blast through boilerplate code fast
+
+MCP Setup: Connected to GitHub, HubSpot, and Supabase MCPs - being able to directly manipulate the database and deploy functions without leaving the chat is peak vibe
+
+Key Extensions:
+
+Prettier with format-on-save (obvious)
+
+ESLint with security plugins
+
+Tailwind CSS IntelliSense
+
+GitLens for blame-free coding
+
+Database client for quick schema checks
+
+Workflow Rules:
+
+Migration-first database development - NEVER let AI touch the DB directly
+
+Type generation after every schema change (automated with git hooks)
+
+Commit-and-test after every component - keeps the vibe clean
+
+Server-first architecture with Next.js 15's after() for that async flow
+
+The Vibe Enhancers:
+
+Vitest UI for visual test runs (satisfying green checks)
+
+Supabase local dev with supabase start
+
+Hot reload with --turbo flag
+
+shadcn/ui for instant beautiful components
+
+Real-time subscriptions for that live data feel
+
+y Golden Rule: I prompt my AI like I'm briefing a junior dev - explicit about security patterns, where files go, and what patterns to follow. Keeps the code consistent even in maximum vibe mode. I am also committing basically every feature and always work in new branches when i change something major.
+
+
+my go to is Cline in VS code with Opus 4 in plan mode and Sonnet 4 in code mode
+
+trying out Claude Code right now, liking it so far, mainly trying it because pricing wise its cheaper than the above because it works with their Max subscription
+
+Claude Code + Opus 4 + Max sub is hard to beat. Before that, Cursor + Gemini 2.5 Pro MAX was goated
+
+
+Cursor w Sonnet 4, ChatGPT Plus leveraging o3 for high level planning
+
+Gemini 2.5 pro for strategy definition, Cursor and Claude Sonnet 4.0 for coding in the IDE, Aider with DeepSeek for large batch operations and automatic testing development, and CodeRabbit in GitHub for Code Review…
+
+
+
+Cursor with Claude 4 Sonnet
+Running on Windows 11 + WSL + VS Code DevContainers (per project).
+
+The biggest productivity boost for me has been TaskMaster AI. It acts like a project manager for your AI agent—turning your PRD into a structured task list the agent can follow. With an MCP server running, the agent can create, update, and track tasks in real time.
+
+It keeps the agent focused, prevents context drift, and helps it break down complex goals into clean, manageable steps. Total game-changer for vibe coding.
+
+https://github.com/sst/opencode
+
+https://github.com/BeehiveInnovations/zen-mcp-server

@@ -1,0 +1,58 @@
+BLUEPOKER BACKLOG
+=================
+
+FUTURE INCREMENTS
+------------------
+
+INCREMENT 1 - CARD AND DECK API + UI HARNESS:
+- [ ] Card type: {suit: 'hearts'|'diamonds'|'clubs'|'spades', rank: 'A'|'2'...'K'}
+- [ ] Deck interface: Card[] with shuffle/draw methods
+- [ ] Next.js Route Handlers: /api/deck/shuffle and /api/deck/draw
+- [ ] SVG card rendering using shadcn/ui primitives
+- [ ] Deterministic shuffle algorithm with seeding
+- [ ] React page /deck with Shuffle + Draw 5 buttons
+- [ ] Property-based testing for shuffle uniformity (±5%)
+- [ ] Playwright test: clicks Shuffle then Draw 5, asserts five distinct cards
+
+INCREMENT 2 - HAND EVALUATION SERVICE:
+- [ ] Hand evaluation input/output types
+- [ ] Sub-microsecond hand evaluator implementation
+- [ ] Next.js Route Handler: /api/hand/eval
+- [ ] Validation against hand-ranking corpus
+- [ ] Vitest benchmark < 1 µs mean performance
+- [ ] Extend /deck page with Evaluate button
+- [ ] Playwright test: draws known royal flush, verifies "RoyalFlush"
+
+INCREMENT 3 - HEADS-UP ENGINE + MULTI-SESSION:
+- [ ] Supabase auth stub for guest users
+- [ ] Table state persistence in Supabase
+- [ ] WebSocket channel table/{id} for state deltas
+- [ ] Next.js Route Handlers: /api/auth/guest, /api/table/join
+- [ ] Two-player game engine with seat assignment
+- [ ] Login screen + minimal table view
+- [ ] Vitest state-machine tests for blinds, betting, showdown
+- [ ] Playwright multi-context testing (two browser windows)
+
+INCREMENT 4 - PERSISTENCE & RECONNECT:
+- [ ] Supabase event store schema (via migrations)
+- [ ] Durable game state persistence
+- [ ] Reconnect flows with session recovery
+- [ ] WebSocket reconnection handling
+- [ ] Integration test: server restart mid-hand with state recovery
+
+INFRASTRUCTURE & DEPLOYMENT:
+- [ ] Supabase migration-first DB development workflow
+- [ ] Auto type-gen on schema changes (pre-commit hook)
+- [ ] k6 setup for API load testing
+- [ ] Docker configuration for Fly.io deployment
+- [ ] Test data factories for cards, hands, game states
+- [ ] pino-http request logging + pg_stat_statements diagnostics
+- [ ] tsc-watch for type drift monitoring
+- [ ] VS Code extensions: Prettier, ESLint, Tailwind IntelliSense, GitLens
+
+FUTURE FEATURES (POST-MVP):
+- [ ] Lobby & matchmaking system
+- [ ] Tournament trees and structures
+- [ ] Spectator functionality
+- [ ] MTT blind schedules
+- [ ] Advanced analytics and reporting
