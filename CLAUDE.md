@@ -57,14 +57,23 @@ MANDATORY TDD + DOCUMENTATION WORKFLOW:
    - MANDATORY: `pnpm test` - all tests must pass
    - MANDATORY: `pnpm build` - must build successfully
 
-4. FORBIDDEN ACTIONS:
+4. PRE-TESTING VALIDATION (CLAUDE MUST RUN BEFORE REQUESTING HUMAN TESTING):
+   - MANDATORY: Run `pnpm typecheck` and verify no TypeScript errors
+   - MANDATORY: Run `pnpm lint` and verify no ESLint errors  
+   - MANDATORY: Run `pnpm test` and verify all tests pass
+   - MANDATORY: Run `pnpm build` and verify successful compilation
+   - MANDATORY: Perform basic smoke test of implemented functionality
+   - ONLY AFTER ALL CHECKS PASS: Request human testing with specific test scenarios
+
+5. FORBIDDEN ACTIONS:
    - NEVER implement features without tests first
    - NEVER skip writing specifications
    - NEVER commit code with failing tests
    - NEVER break existing functionality (regression testing catches this)
    - NEVER write code without understanding the specification
+   - NEVER request human testing without running pre-testing validation first
 
-5. SUCCESS CRITERIA FOR ANY FEATURE:
+6. SUCCESS CRITERIA FOR ANY FEATURE:
    - Specification exists and is complete
    - Tests exist and initially failed, now pass
    - All existing tests still pass (no regressions)
@@ -72,7 +81,7 @@ MANDATORY TDD + DOCUMENTATION WORKFLOW:
    - Documentation updated
    - Feature works as specified in UI/API
 
-6. TESTING COMMANDS TO USE:
+7. TESTING COMMANDS TO USE:
    - `pnpm test` - run all tests
    - `pnpm test --watch` - continuous testing during development
    - `pnpm test unit` - run only unit tests

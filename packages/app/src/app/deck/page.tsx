@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, ShuffleResponse, DrawResponse } from '@bluepoker/shared';
+import { Card, ShuffleResponse, DrawResponse, HandEvalResult, cardToString } from '@bluepoker/shared';
 
 export default function DeckPage() {
   const [deck, setDeck] = useState<Card[]>([]);
@@ -10,6 +10,8 @@ export default function DeckPage() {
   const [drawCount, setDrawCount] = useState<number>(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [handEvaluation, setHandEvaluation] = useState<HandEvalResult | null>(null);
+  const [evaluating, setEvaluating] = useState(false);
 
   const handleShuffle = async () => {
     setLoading(true);
@@ -27,6 +29,7 @@ export default function DeckPage() {
       setDeck(data.deck);
       setDrawnCards([]); // Clear drawn cards when shuffling
       setShuffleSeed(data.seed.toString());
+      setHandEvaluation(null); // Clear hand evaluation when shuffling
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to shuffle deck');
     } finally {
@@ -63,10 +66,48 @@ export default function DeckPage() {
       const data: DrawResponse = await response.json();
       setDrawnCards(data.drawnCards);
       setDeck(data.remainingDeck);
+      setHandEvaluation(null); // Clear hand evaluation when drawing new cards
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to draw cards');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEvaluateHand = async () => {
+    if (drawnCards.length < 5) {
+      setError('Need at least 5 cards to evaluate hand');
+      return;
+    }
+
+    setEvaluating(true);
+    setError(null);
+
+    try {
+      // Convert Card objects to string format for API
+      const cardStrings = drawnCards.map(card => cardToString(card));
+
+      const response = await fetch('/api/hand/eval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cards: cardStrings
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to evaluate hand');
+      }
+
+      const data: HandEvalResult = await response.json();
+      setHandEvaluation(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to evaluate hand');
+    } finally {
+      setEvaluating(false);
     }
   };
 
@@ -181,6 +222,40 @@ export default function DeckPage() {
               <p className="text-sm">
                 <span className="font-medium">Current seed:</span> {shuffleSeed || 'Not shuffled'}
               </p>
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Hand Evaluation</h2>
+            <div className="space-y-4">
+              <button
+                onClick={handleEvaluateHand}
+                disabled={evaluating || drawnCards.length < 5}
+                className="w-full bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {evaluating ? 'Evaluating...' : 'Evaluate Hand'}
+              </button>
+              {drawnCards.length < 5 && (
+                <p className="text-sm text-gray-500">
+                  Draw at least 5 cards to evaluate hand
+                </p>
+              )}
+              {handEvaluation && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-semibold text-lg text-purple-700">
+                    {handEvaluation.handRankName}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {handEvaluation.handDescription}
+                  </p>
+                  <div className="mt-2 text-xs text-gray-500">
+                    <p>Hand Strength: {handEvaluation.handStrength}</p>
+                    {handEvaluation.kickers.length > 0 && (
+                      <p>Kickers: {handEvaluation.kickers.join(', ')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

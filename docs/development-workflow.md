@@ -75,17 +75,20 @@ pnpm test --watch
 
 #### Quality Checks (Run frequently)
 ```bash
-# Lint all packages
-pnpm lint
+# Combined quality check (lint + typecheck)
+pnpm quality-check
 
-# Type check all packages  
-pnpm typecheck
+# Pre-testing validation (typecheck + lint + test)  
+pnpm pre-test
 
-# Run full test suite
-pnpm test
+# Full validation (all quality gates + build)
+pnpm validate
 
-# Performance testing
-pnpm test:perf
+# Individual checks
+pnpm lint          # Lint all packages
+pnpm typecheck     # Type check all packages  
+pnpm test          # Run full test suite
+pnpm build         # Test production build
 ```
 
 ### Pre-Commit (Automated via Husky)
@@ -149,16 +152,43 @@ bluepoker/
 5. **Implement Features** - Write code to make tests pass
 6. **Regression Testing** - Run ALL tests to ensure no breaking changes
 7. **Refactor & Optimize** - Improve code while keeping tests green
-8. **Quality Gates** - Lint, typecheck, test, build
-9. **Update Documentation** - Update `docs/current-state.md`
-10. **Commit & Push** - Automated quality checks via Husky
+8. **Pre-Testing Validation** - Run `pnpm pre-test` (Claude mandatory step)
+9. **Human Testing** - Follow structured scenarios in `docs/testing-checklist.md`
+10. **Quality Gates** - Run `pnpm validate` for final verification
+11. **Update Documentation** - Update `docs/current-state.md`
+12. **Commit & Push** - Automated quality checks via Husky
 
 ### Critical Testing Points
 
-- **After every feature implementation**: Run full test suite
-- **Before committing**: All tests must pass (enforced by Husky)
+- **After every feature implementation**: Run `pnpm pre-test`
+- **Before requesting human testing**: Claude must run pre-testing validation
+- **During human testing**: Follow structured checklist in `docs/testing-checklist.md`
+- **Before committing**: Run `pnpm validate` and fix any issues
+- **Git commit triggers**: Automated Husky hooks (lint, typecheck, unit tests)
 - **During development**: Use watch mode for immediate feedback
 - **Before moving to next increment**: Complete regression testing
+
+### Human-in-the-Loop Testing Protocol
+
+1. **Claude Preparation Phase:**
+   - Run `pnpm pre-test` (mandatory)
+   - Perform basic smoke test
+   - Prepare specific test scenarios
+   - Reference `docs/testing-checklist.md` for current increment
+
+2. **Human Testing Phase:**
+   - Follow structured test scenarios
+   - Validate UI interactions
+   - Test API endpoints manually
+   - Verify error handling
+   - Check performance expectations
+
+3. **Commit Phase:**
+   - Run `git add .` to stage changes
+   - Run `git commit -m "message"` 
+   - Husky pre-commit hooks execute automatically
+   - Fix any issues found by hooks
+   - Push to repository for CI/CD validation
 
 ## Testing Strategy
 

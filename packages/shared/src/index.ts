@@ -3,3 +3,4 @@
 export * from './types'
 export * from './utils'
 export * from './cards'
+export * from './hand-evaluation'

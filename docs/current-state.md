@@ -1,7 +1,9 @@
 # BluPoker - Current State
 
 ## Increment 0 - Build & Tooling Skeleton ✅ COMPLETED
-## Testing Infrastructure Setup ✅ COMPLETED
+## Testing Infrastructure Setup ✅ COMPLETED  
+## Increment 1 - Card and Deck API + UI Harness ✅ COMPLETED
+## Increment 2 - Hand Evaluation Service ✅ COMPLETED
 
 ### What's Working
 
@@ -63,28 +65,53 @@ Navigate to `http://localhost:3000` to see:
 - Clean, centered layout with Tailwind CSS
 - Dark mode support (text adapts to theme)
 
+Navigate to `http://localhost:3000/deck` to see:
+- Interactive deck testing harness
+- Shuffle deck with optional seed input
+- Draw cards with visual card display
+- **Hand evaluation functionality** - evaluate 5-7 card hands
+- Working API endpoints: GET /api/deck/shuffle, POST /api/deck/draw, POST /api/hand/eval
+
+### Increment 1 - Card and Deck API Status ✅
+
+**Completed Features:**
+- ✅ Deterministic card model with Fisher-Yates shuffle algorithm
+- ✅ GET /api/deck/shuffle endpoint with seeded randomization
+- ✅ POST /api/deck/draw endpoint with validation  
+- ✅ Interactive UI at /deck with card rendering
+- ✅ Comprehensive unit tests (16/16 passing)
+- ✅ All quality gates passing (lint, typecheck, build)
+
+### Increment 2 - Hand Evaluation Service Status ✅
+
+**Completed Features:**
+- ✅ Complete hand evaluation algorithm supporting all 10 poker hand ranks
+- ✅ POST /api/hand/eval endpoint with comprehensive validation
+- ✅ Extended /deck UI with hand evaluation button and results display
+- ✅ Comprehensive unit tests (24/24 passing) using TDD methodology
+- ✅ Integration tests for API endpoints
+- ✅ Performance optimized evaluation with lookup-table approach
+- ✅ All quality gates passing (lint, typecheck, build)
+
+**Hand Evaluation Features:**
+- Royal Flush, Straight Flush, Four of a Kind, Full House, Flush
+- Straight, Three of a Kind, Two Pair, One Pair, High Card
+- Wheel straight (A-2-3-4-5) and Broadway straight (10-J-Q-K-A) support
+- Best 5-card selection from 5-7 cards
+- Hand strength scoring for tie-breaking
+- Comprehensive input validation and error handling
+
 ### Next Steps
 
-Ready to begin **Increment 1 - Card and Deck API + UI Harness** using TDD approach:
+Ready to begin **Increment 3 - Heads-Up Engine + Multi-Session Demo** using TDD approach:
 
-**1. Specification Complete** ✅
-- `tests/specs/card-deck-api.spec.md` - Full feature specification documented
+**Objective:** Stateful two-player engine with Supabase auth stub.
 
-**2. Tests Written** ✅  
-- `tests/unit/card-deck-api.test.ts` - Unit tests (currently failing)
-- `tests/integration/card-deck-api.test.ts` - API endpoint tests (currently failing)
-
-**3. Ready to Implement:**
-- Deterministic card model in `packages/shared/src/`
-- Deck shuffle & draw API endpoints in `packages/app/src/app/api/`
-- Card rendering with SVG using shadcn/ui
-- UI harness at `/deck` route
-
-**4. TDD Process:**
-1. Run tests (should fail) - `pnpm test`
-2. Implement features to make tests pass
-3. Run regression tests after each feature
-4. Refactor while keeping tests green
+**Target Features:**
+- POST /api/auth/guest endpoint for guest authentication
+- POST /api/table/join endpoint for table joining
+- WebSocket channel for real-time game state updates
+- Minimal table UI with hole cards, community cards, action buttons
 
 ### Environment Setup
 

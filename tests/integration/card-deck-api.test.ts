@@ -13,46 +13,38 @@ import { TestAssertions } from '../utils/test-helpers';
 
 describe('GET /api/deck/shuffle', () => {
   it('should return shuffled deck with valid structure', async () => {
-    // This test will fail until API endpoint is implemented
-    // const response = await fetch('/api/deck/shuffle?seed=123');
-    // const data = await response.json();
-    // 
-    // expect(response.status).toBe(200);
-    // expect(data).toHaveProperty('deck');
-    // expect(data).toHaveProperty('seed');
-    // expect(data).toHaveProperty('timestamp');
-    // expect(Array.isArray(data.deck)).toBe(true);
-    // expect(data.deck.length).toBe(52);
+    const response = await fetch('http://localhost:3000/api/deck/shuffle?seed=123');
+    const data = await response.json();
     
-    // Placeholder assertion that will fail
-    expect(true).toBe(false); // Remove when implementing
+    expect(response.status).toBe(200);
+    expect(data).toHaveProperty('deck');
+    expect(data).toHaveProperty('seed');
+    expect(data).toHaveProperty('timestamp');
+    expect(Array.isArray(data.deck)).toBe(true);
+    expect(data.deck.length).toBe(52);
+    expect(TestAssertions.isValidDeck(data.deck)).toBe(true);
   });
 
   it('should return consistent shuffle for same seed', async () => {
-    // This test will fail until API endpoint is implemented
-    // const response1 = await fetch('/api/deck/shuffle?seed=123');
-    // const response2 = await fetch('/api/deck/shuffle?seed=123');
-    // 
-    // const data1 = await response1.json();
-    // const data2 = await response2.json();
-    // 
-    // expect(data1.deck).toEqual(data2.deck);
+    const response1 = await fetch('http://localhost:3000/api/deck/shuffle?seed=123');
+    const response2 = await fetch('http://localhost:3000/api/deck/shuffle?seed=123');
     
-    // Placeholder assertion that will fail
-    expect(true).toBe(false); // Remove when implementing
+    const data1 = await response1.json();
+    const data2 = await response2.json();
+    
+    expect(data1.deck).toEqual(data2.deck);
+    expect(data1.seed).toBe(data2.seed);
   });
 
   it('should use timestamp as default seed when not provided', async () => {
-    // This test will fail until API endpoint is implemented
-    // const response = await fetch('/api/deck/shuffle');
-    // const data = await response.json();
-    // 
-    // expect(response.status).toBe(200);
-    // expect(typeof data.seed).toBe('number');
-    // expect(data.seed).toBeGreaterThan(0);
+    const response = await fetch('http://localhost:3000/api/deck/shuffle');
+    const data = await response.json();
     
-    // Placeholder assertion that will fail
-    expect(true).toBe(false); // Remove when implementing
+    expect(response.status).toBe(200);
+    expect(data).toHaveProperty('seed');
+    expect(typeof data.seed).toBe('number');
+    expect(data.seed).toBeGreaterThan(0);
+    expect(TestAssertions.isValidDeck(data.deck)).toBe(true);
   });
 
   it('should handle invalid seed gracefully', async () => {
