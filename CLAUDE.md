@@ -5,6 +5,82 @@
 ```text
 USER INSTRUCTIONS:
 
+BEFORE STARTING ANY WORK: Always read docs/current-state.md to understand the current project status, available commands, and working features.
+
+Documentation structure:
+- docs/current-state.md - Current project status and available commands
+- docs/development-workflow.md - Development workflow and processes
+
+MANDATORY TDD + DOCUMENTATION WORKFLOW:
+
+1. BEFORE ANY FEATURE IMPLEMENTATION:
+   - MUST read docs/current-state.md to understand project status
+   - MUST read tests/README.md to understand testing workflow
+   - MUST follow the exact TDD process - NO EXCEPTIONS
+
+2. FOR EVERY NEW FEATURE (REQUIRED SEQUENCE):
+   Step 1: SPECIFICATION FIRST
+   - Copy tests/specs/TEMPLATE.spec.md to tests/specs/{feature-name}.spec.md
+   - Document purpose, API contract, behavior, acceptance criteria
+   - Include test scenarios for unit/integration/e2e
+   - MANDATORY: Review specification before proceeding
+
+   Step 2: TESTS SECOND  
+   - Create failing tests in tests/unit/{feature-name}.test.ts
+   - Create failing tests in tests/integration/{feature-name}.test.ts
+   - Create failing tests in tests/e2e/{feature-name}.test.ts (if applicable)
+   - MANDATORY: Run `pnpm test` - tests MUST fail initially
+   - MANDATORY: Verify specific test failures match expected behavior
+
+   Step 3: IMPLEMENTATION THIRD
+   - Write minimal code to make tests pass (Red → Green)
+   - MANDATORY: Run `pnpm test` after each code change
+   - MANDATORY: All new tests must pass before proceeding
+   
+   Step 4: REGRESSION TESTING (CRITICAL)
+   - MANDATORY: Run full test suite `pnpm test` 
+   - MANDATORY: ALL existing tests must still pass
+   - If ANY test fails, STOP and fix before continuing
+   
+   Step 5: REFACTOR (OPTIONAL)
+   - Improve code quality while keeping tests green
+   - MANDATORY: Run `pnpm test` after each refactor
+   
+   Step 6: DOCUMENTATION UPDATE
+   - Update docs/current-state.md with new features
+   - Mark increment status as complete
+   - Document any new commands or workflows
+
+3. QUALITY GATES (ALL MUST PASS):
+   - MANDATORY: `pnpm lint` - no errors allowed
+   - MANDATORY: `pnpm typecheck` - no type errors allowed  
+   - MANDATORY: `pnpm test` - all tests must pass
+   - MANDATORY: `pnpm build` - must build successfully
+
+4. FORBIDDEN ACTIONS:
+   - NEVER implement features without tests first
+   - NEVER skip writing specifications
+   - NEVER commit code with failing tests
+   - NEVER break existing functionality (regression testing catches this)
+   - NEVER write code without understanding the specification
+
+5. SUCCESS CRITERIA FOR ANY FEATURE:
+   - Specification exists and is complete
+   - Tests exist and initially failed, now pass
+   - All existing tests still pass (no regressions)
+   - Code passes all quality gates
+   - Documentation updated
+   - Feature works as specified in UI/API
+
+6. TESTING COMMANDS TO USE:
+   - `pnpm test` - run all tests
+   - `pnpm test --watch` - continuous testing during development
+   - `pnpm test unit` - run only unit tests
+   - `pnpm test integration` - run only integration tests
+   - `pnpm test {feature-name}` - run specific feature tests
+
+IF ANY STEP FAILS OR IS SKIPPED, STOP IMMEDIATELY AND RESTART THE PROCESS.
+
 Adopt the persona of a technical expert. The tone must be impersonal, objective, and informational.
 
 Use more explanatory language or simple metaphors where necessary if the user is struggling with understanding or confused about a subject.
@@ -28,9 +104,12 @@ Play‑money Texas Hold'em poker server + browser client delivered in bite‑s
 
 ## Repository Status
 
-- New repository **bluepoker** on `master` branch; zero commits at time‑zero.
+- Repository **bluepoker** on `master` branch with Increment 0 complete.
 - `.claude/settings.local.json` already present for Claude Code configuration.
-- No application code; roadmap and scaffolding tasks defined below establish initial structure.
+- **IMPORTANT:** Before starting work, always read `docs/current-state.md` for the latest project status, available commands, and what's currently working.
+- **TDD WORKFLOW MANDATORY**: Every feature MUST follow Specification → Tests → Implementation → Regression Testing sequence. NO EXCEPTIONS.
+- **CONTINUOUS TESTING**: Run `pnpm test` after every code change. All tests must pass before proceeding.
+- Development server running at `http://localhost:3000` with "Hello Poker" landing page.
 
 ---
 

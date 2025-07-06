@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint, typecheck, and unit tests only before commit
+pnpm lint
+pnpm typecheck
+pnpm test --run ../../tests/unit/
+
+# Generate Supabase types if schema changed
+if [ -f "supabase/migrations" ]; then
+  export PATH="$HOME/.local/bin:$PATH"
+  supabase gen types typescript --local > packages/shared/src/db.ts
+  git add packages/shared/src/db.ts
+fi

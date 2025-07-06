@@ -1,0 +1,21 @@
+{
+  "name": "bluepoker",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter app dev",
+    "build": "pnpm --filter app build",
+    "start": "pnpm --filter app start",
+    "test": "pnpm --filter app test",
+    "lint": "pnpm --filter '*' lint",
+    "typecheck": "pnpm --filter '*' typecheck",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

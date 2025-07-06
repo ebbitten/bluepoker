@@ -1,0 +1,19 @@
+{
+  "name": "@bluepoker/shared",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8",
+    "eslint-plugin-security": "^1.7.1",
+    "typescript": "^5"
+  }
+}
