@@ -101,17 +101,58 @@ Navigate to `http://localhost:3000/deck` to see:
 - Hand strength scoring for tie-breaking
 - Comprehensive input validation and error handling
 
+### Increment 3 - Heads-Up Engine + Multi-Session Demo Status ✅
+
+**Completed Features:**
+- ✅ Complete Texas Hold'em game state management system
+- ✅ POST /api/game/create endpoint for creating two-player games
+- ✅ GET /api/game/:gameId endpoint for retrieving game state
+- ✅ POST /api/game/:gameId/deal endpoint for dealing new hands
+- ✅ POST /api/game/:gameId/action endpoint for executing player actions (fold, call, raise)
+- ✅ In-memory game storage with proper state isolation
+- ✅ Complete betting round logic with blind structure
+- ✅ Phase progression through preflop, flop, turn, river, showdown
+- ✅ Winner determination with hand evaluation integration
+- ✅ All-in and side pot scenarios
+- ✅ Comprehensive unit tests (59/60 passing, 1 skipped)
+- ✅ Comprehensive integration tests (14/14 passing)
+- ✅ All quality gates passing (lint, typecheck, build)
+
+**Game Features Working:**
+- Two-player Texas Hold'em with proper blind structure (10/20)
+- Complete betting rounds with fold, call, raise actions
+- Automatic phase progression through all streets
+- Hand evaluation at showdown using existing hand evaluator
+- Pot distribution to winners
+- Player action validation (turn order, bet sizing, etc.)
+- All-in scenarios with proper pot calculation
+
+**API Endpoints Available:**
+```
+POST /api/game/create
+  Body: { playerNames: [string, string] }
+  Returns: { gameId: string, gameState: GameState }
+
+GET /api/game/:gameId
+  Returns: GameState
+
+POST /api/game/:gameId/deal
+  Returns: GameState (with hole cards dealt and blinds posted)
+
+POST /api/game/:gameId/action
+  Body: { playerId: string, action: 'fold'|'call'|'raise', amount?: number }
+  Returns: { success: boolean, gameState: GameState, error?: string }
+```
+
 ### Next Steps
 
-Ready to begin **Increment 3 - Heads-Up Engine + Multi-Session Demo** using TDD approach:
-
-**Objective:** Stateful two-player engine with Supabase auth stub.
+Ready to begin **Increment 4 - Table UI and Real-time Updates**:
 
 **Target Features:**
-- POST /api/auth/guest endpoint for guest authentication
-- POST /api/table/join endpoint for table joining
-- WebSocket channel for real-time game state updates
-- Minimal table UI with hole cards, community cards, action buttons
+- Minimal table UI showing game state
+- Real-time updates via WebSocket or polling
+- Visual representation of cards, chips, and actions
+- Player interaction buttons
 
 ### Environment Setup
 
