@@ -1,6 +1,7 @@
 {
   "name": "bluepoker",
   "private": true,
+<<<<<<< HEAD
   "scripts": {
     "dev": "pnpm --filter app dev",
     "build": "pnpm --filter app build",
@@ -22,6 +23,28 @@
     "validate": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "pre-test": "pnpm typecheck && pnpm lint && pnpm test",
     "quality-check": "pnpm lint && pnpm typecheck"
+=======
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.7.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.1",
+    "react-scripts": "5.0.1",
+    "socket.io-client": "^4.7.5",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "start-server": "node server/index.js",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+>>>>>>> 8a19d34 (game lobby working)
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",

@@ -2,8 +2,11 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const { sequelize } = require('./config/database');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { sequelize, User } = require('./config/database');
 const GameLogic = require('./models/GameLogic');
+const Game = require('./models/Game');
 
 // Import routers
 const authRouter = require('./routes/auth');
@@ -12,6 +15,39 @@ const gameRouter = require('./routes/game');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const JWT_SECRET = 'your_jwt_secret'; // In a real app, use an environment variable
+
+// User registration
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, password: hashedPassword });
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    res.status(400).json({ error: 'Registration failed' });
+  }
+});
+
+// User login
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: 'Invalid password' });
+    }
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token });
+  } catch (error) {
+    res.status(400).json({ error: 'Login failed' });
+  }
+});
 
 // Use routers
 app.use('/api/auth', authRouter);
@@ -26,7 +62,8 @@ const io = socketIo(server, {
   }
 });
 
-const games = new Map();
+// Remove this line
+// const games = new Map();
 
 // Sync database
 sequelize.sync()
@@ -37,68 +74,124 @@ sequelize.sync()
 io.on('connection', (socket) => {
   console.log('New client connected');
 
-  socket.on('getGames', () => {
-    const gamesList = Array.from(games.values()).map(game => ({
-      id: game.id,
-      players: game.players.length,
-      maxPlayers: game.maxPlayers,
-      status: game.status
-    }));
-    socket.emit('gamesList', gamesList);
-  });
-
-  socket.on('createGame', () => {
-    const gameId = Date.now().toString();
-    const newGame = new GameLogic(gameId);
-    games.set(gameId, newGame);
-    socket.emit('gameCreated', gameId);
-    io.emit('gamesList', Array.from(games.values()).map(game => ({
-      id: game.id,
-      players: game.players.length,
-      maxPlayers: game.maxPlayers,
-      status: game.status
-    })));
-  });
-
-  socket.on('joinGame', (gameId) => {
-    const game = games.get(gameId);
-    if (game && game.players.length < game.maxPlayers) {
-      const player = {
-        id: socket.id,
-        name: `Player ${game.players.length + 1}`,
-        chips: 1000,
-        currentBet: 0,
-        folded: false,
-        allIn: false
-      };
-      if (game.addPlayer(player)) {
-        socket.join(gameId);
-        socket.emit('joinedGame', game.getPublicGameState(socket.id));
-        io.to(gameId).emit('playerJoined', player);
-        if (game.players.length >= 2 && game.status === 'waiting') {
-          game.startGame();
-          io.to(gameId).emit('gameStarted', game.getPublicGameState(null));
-        }
-      } else {
-        socket.emit('joinGameError', 'Game is full');
-      }
-    } else {
-      socket.emit('joinGameError', 'Unable to join game');
+  socket.on('authenticate', (token) => {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      socket.userId = decoded.id;
+      socket.username = decoded.username;
+      socket.emit('authenticated');
+    } catch (error) {
+      socket.emit('authentication_error', 'Invalid token');
     }
   });
 
-  socket.on('gameAction', ({ gameId, action, amount }) => {
-    const game = games.get(gameId);
+  socket.on('getGames', async () => {
+    const games = await Game.findAll({
+      where: { status: 'waiting' },
+      attributes: ['id', 'status', 'maxPlayers']
+    });
+    socket.emit('gamesList', games);
+  });
+
+  socket.on('createGame', async () => {
+    try {
+      const newGame = await Game.create({
+        id: Date.now().toString(),
+        status: 'waiting',
+        maxPlayers: 9,
+        smallBlind: 10,
+        bigBlind: 20,
+      });
+      console.log(`New game created with ID: ${newGame.id}`);
+      socket.emit('gameCreated', newGame.id);
+      const games = await Game.findAll({ 
+        where: { status: 'waiting' }, 
+        attributes: ['id', 'status', 'maxPlayers'] 
+      });
+      io.emit('gamesList', games);
+    } catch (error) {
+      console.error('Error creating game:', error);
+      socket.emit('gameCreationError', 'Failed to create game');
+    }
+  });
+
+  socket.on('joinGame', async (gameId) => {
+    console.log(`Attempt to join game: ${gameId}`);
+    const game = await Game.findByPk(gameId);
+    if (game && game.status === 'waiting') {
+      let gameLogic = new GameLogic(game.id, game.maxPlayers);
+      gameLogic.addPlayer({
+        id: socket.id,
+        name: `Player ${gameLogic.players.length + 1}`,
+        chips: 1000,
+        bet: 0,
+        folded: false,
+        allIn: false
+      });
+      
+      await game.update({ 
+        players: JSON.stringify(gameLogic.players),
+        status: gameLogic.players.length >= 2 ? 'ready' : 'waiting'
+      });
+
+      socket.join(gameId);
+      console.log(`Player ${socket.id} joined game ${gameId}`);
+      
+      io.to(gameId).emit('playerJoined', { 
+        id: socket.id, 
+        playerCount: gameLogic.players.length 
+      });
+      
+      socket.emit('joinedGame', gameLogic.getPublicGameState());
+
+      if (gameLogic.players.length >= 2) {
+        io.to(gameId).emit('gameReady');
+      }
+    } else {
+      console.log(`Game ${gameId} not found or not in waiting state`);
+      socket.emit('joinGameError', 'Game not found or not in waiting state');
+    }
+  });
+
+  socket.on('startGame', async (gameId) => {
+    const game = await Game.findByPk(gameId);
+    if (game && game.status === 'ready') {
+      let gameLogic = new GameLogic(game.id, game.maxPlayers);
+      gameLogic.players = JSON.parse(game.players);
+      gameLogic.startGame();
+      
+      await game.update({ 
+        status: 'playing',
+        players: JSON.stringify(gameLogic.players)
+      });
+
+      io.to(gameId).emit('gameStarted', gameLogic.getPublicGameState());
+    } else {
+      socket.emit('startGameError', 'Game not found or not ready to start');
+    }
+  });
+
+  socket.on('gameAction', async ({ gameId, action, amount }) => {
+    const game = await Game.findByPk(gameId);
     if (game) {
-      const playerIndex = game.players.findIndex(p => p.id === socket.id);
-      if (playerIndex !== -1 && playerIndex === game.currentPlayerIndex) {
+      const gameLogic = new GameLogic(game.id, game.maxPlayers);
+      // We need to populate gameLogic with the current game state
+      // This part depends on how you're storing the game state in the database
+      
+      const playerIndex = gameLogic.players.findIndex(p => p.id === socket.id);
+      if (playerIndex !== -1 && playerIndex === gameLogic.currentPlayerIndex) {
         try {
-          game.handleAction(playerIndex, action, amount);
-          io.to(gameId).emit('gameStateUpdate', game.getPublicGameState(null));
-          if (game.status === 'ended') {
+          gameLogic.handleAction(playerIndex, action, amount);
+          // Update the game state in the database
+          game.status = gameLogic.status;
+          // Add other properties that need to be updated
+          await game.save();
+          
+          io.to(gameId).emit('gameStateUpdate', gameLogic.getPublicGameState(null));
+          if (gameLogic.status === 'ended') {
             // Handle game end, maybe start a new round
-            games.delete(gameId);
-            io.to(gameId).emit('gameEnded', game.getPublicGameState(null));
+            await game.destroy();
+            io.to(gameId).emit('gameEnded', gameLogic.getPublicGameState(null));
           }
         } catch (error) {
           socket.emit('gameActionError', error.message);
@@ -106,30 +199,27 @@ io.on('connection', (socket) => {
       } else {
         socket.emit('gameActionError', 'Not your turn');
       }
+    } else {
+      socket.emit('gameActionError', 'Game not found');
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.log('Client disconnected');
-    for (let [gameId, game] of games) {
-      if (game.removePlayer(socket.id)) {
-        io.to(gameId).emit('playerLeft', socket.id);
-        if (game.players.length === 0) {
-          games.delete(gameId);
-        } else if (game.status !== 'waiting' && game.getActivePlayers().length < 2) {
-          game.status = 'ended';
-          io.to(gameId).emit('gameEnded', game.getPublicGameState(null));
-          games.delete(gameId);
-        }
-      }
-    }
+    // Handle player disconnection logic here
   });
 });
 
 const PORT = process.env.PORT || 5000;
-sequelize.sync({ force: false })
-  .then(() => {
-    console.log('Database synced');
+
+async function startServer() {
+  try {
+    await sequelize.sync({ alter: true });
+    console.log('Database synced and altered if necessary');
     server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch(err => console.error('Unable to sync database:', err));
+  } catch (err) {
+    console.error('Unable to sync database:', err);
+  }
+}
+
+startServer();
