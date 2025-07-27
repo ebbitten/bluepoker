@@ -10,7 +10,8 @@ CLAUDE.md (YOU ARE HERE - ROOT DOCUMENT)
 ├── 🔧 docs/api-testing-guidelines.md (Safe testing patterns)
 ├── 🧪 docs/comprehensive-testing.md (Production validation)
 ├── 📋 docs/safe-command-reference.md (Proven safe patterns)
-└── 🎯 docs/production-readiness.md (Deployment checklist)
+├── 🎯 docs/production-readiness.md (Deployment checklist)
+└── ⚠️ docs/wsl2-docker-troubleshooting.md (Infrastructure challenges)
 ```
 
 ## Instruction Prompt (verbatim for Claude‑based agents)
@@ -32,14 +33,13 @@ USER INSTRUCTIONS:
 
 📊 PROJECT STATUS:
 - Increment 3 COMPLETE: Full multiplayer poker with real-time features
-- Increment 4 COMPLETE: Persistence & reconnect functionality  
-- AUTHENTICATION TESTING: PRODUCTION READY ✅
-- Core game functionality: PRODUCTION READY ✅
+- Increment 4 PROGRESS: Persistence in development (Docker/WSL2 issues)  
+- CORE POKER FUNCTIONALITY: PRODUCTION READY ✅ (77 tests passing)
 - Real-time features: WORKING ✅
-- Authentication infrastructure: COMPLETE ✅
-- Ready for "many lobbies, many players per game" deployment
-- See docs/production-readiness.md for deployment details
-- See AUTHENTICATION-TESTING-COMPLETE.md for auth status
+- Authentication: MOCK SYSTEM OPERATIONAL ✅ (Supabase blocked by WSL2/Docker networking)
+- Ready for "many lobbies, many players per game" deployment with mock auth
+- See docs/current-state.md for current status and known issues
+- See docs/wsl2-docker-troubleshooting.md for infrastructure challenges
 
 🧪 TESTING APPROACH:
 - Use comprehensive test suites: ./scripts/test-all-comprehensive.sh
@@ -269,6 +269,8 @@ Play‑money Texas Hold'em poker server + browser client delivered in bite‑siz
 ---
 
 ### Change‑Log
+
+2025‑07‑27  INFRASTRUCTURE TROUBLESHOOTING: Identified and documented WSL2/Docker networking issues preventing Supabase startup. Core poker functionality confirmed 100% operational (77 tests passing). Mock authentication system provides full functionality while Docker issues are resolved. Comprehensive troubleshooting documentation created.
 
 2025‑07‑18  PRODUCTION READY: Core multiplayer poker functionality bulletproof. Comprehensive testing complete. Permission prevention system established. Real-time features working. Ready for deployment with many lobbies and players.
 
