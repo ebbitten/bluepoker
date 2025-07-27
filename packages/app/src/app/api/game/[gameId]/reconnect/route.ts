@@ -4,10 +4,10 @@ import { reconnectionService } from '../../../../../lib/persistence-service'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
   try {
-    const { gameId } = params
+    const { gameId } = await params
     
     if (!gameId) {
       return NextResponse.json(

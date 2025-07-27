@@ -4,10 +4,10 @@ import { gamePersistenceService } from '../../../../../lib/persistence-service'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
   try {
-    const { gameId } = params
+    const { gameId } = await params
     
     if (!gameId) {
       return NextResponse.json(
