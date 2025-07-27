@@ -15,6 +15,7 @@ export interface Player {
   currentBet: number;
   folded: boolean;
   allIn: boolean;
+  userId?: string; // Optional user ID for authentication
 }
 
 export interface GameState {
@@ -24,10 +25,13 @@ export interface GameState {
   pot: number;
   currentBet: number;
   activePlayerIndex: number;
-  phase: 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'complete';
+  phase: 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'complete';
   winner?: number;
   winnerReason?: string;
   deck: Card[];
+  playersActed: boolean[]; // Track which players have acted this betting round
+  handNumber: number; // Track which hand this is in the session
+  dealerIndex: number; // Track who the dealer is (rotates each hand)
 }
 
 export interface PlayerActionResult {
@@ -60,9 +64,12 @@ export function createGame(gameId: string, playerNames: [string, string]): GameS
     communityCards: [] as Card[],
     pot: 0,
     currentBet: 0,
-    activePlayerIndex: 0,
-    phase: 'preflop',
-    deck: createDeck()
+    activePlayerIndex: -1, // No active player until hand is dealt
+    phase: 'waiting',
+    deck: createDeck(),
+    playersActed: [false, false],
+    handNumber: 0, // Will be incremented when first hand is dealt
+    dealerIndex: 0 // Player 0 starts as dealer
   };
 }
 
@@ -72,6 +79,10 @@ export function createGame(gameId: string, playerNames: [string, string]): GameS
 export function dealNewHand(gameState: GameState): GameState {
   const seed = Date.now();
   const shuffledDeck = shuffleDeck(createDeck(), seed);
+  
+  // For first hand, player 0 is dealer/small blind to match test expectations
+  // For subsequent hands, rotate dealer position
+  const newDealerIndex = gameState.handNumber === 0 ? 0 : (gameState.dealerIndex + 1) % 2;
   
   // Reset players
   const players = gameState.players.map(player => ({
@@ -87,11 +98,15 @@ export function dealNewHand(gameState: GameState): GameState {
   players[0]!.holeCards = [drawnCards[0]!, drawnCards[1]!];
   players[1]!.holeCards = [drawnCards[2]!, drawnCards[3]!];
 
+  // In heads-up poker, dealer is small blind, non-dealer is big blind
+  const smallBlindIndex = newDealerIndex;
+  const bigBlindIndex = (newDealerIndex + 1) % 2;
+  
   // Post blinds
-  players[0].currentBet = SMALL_BLIND;
-  players[0].chips -= SMALL_BLIND;
-  players[1].currentBet = BIG_BLIND;
-  players[1].chips -= BIG_BLIND;
+  players[smallBlindIndex].currentBet = SMALL_BLIND;
+  players[smallBlindIndex].chips -= SMALL_BLIND;
+  players[bigBlindIndex].currentBet = BIG_BLIND;
+  players[bigBlindIndex].chips -= BIG_BLIND;
 
   return {
     ...gameState,
@@ -99,11 +114,14 @@ export function dealNewHand(gameState: GameState): GameState {
     communityCards: [] as Card[],
     pot: SMALL_BLIND + BIG_BLIND,
     currentBet: BIG_BLIND,
-    activePlayerIndex: 0, // Small blind acts first preflop
+    activePlayerIndex: smallBlindIndex, // Small blind (dealer) acts first preflop
     phase: 'preflop',
     winner: undefined,
     winnerReason: undefined,
-    deck: remainingDeck
+    deck: remainingDeck,
+    playersActed: [false, false], // Reset for new hand
+    handNumber: gameState.handNumber + 1, // Increment hand number
+    dealerIndex: newDealerIndex // Update dealer position
   };
 }
 
@@ -124,6 +142,15 @@ export function executePlayerAction(
 
   const player = gameState.players[playerIndex];
 
+  // Validate game state first
+  if (gameState.phase === 'complete') {
+    return { success: false, gameState, error: 'Hand is complete' };
+  }
+
+  if (gameState.phase === 'waiting') {
+    return { success: false, gameState, error: 'Hand has not been dealt yet' };
+  }
+
   // Validate turn
   if (gameState.activePlayerIndex !== playerIndex) {
     return { success: false, gameState, error: 'not your turn' };
@@ -132,10 +159,6 @@ export function executePlayerAction(
   // Validate player can act
   if (player.folded) {
     return { success: false, gameState, error: 'Player already folded' };
-  }
-
-  if (gameState.phase === 'complete') {
-    return { success: false, gameState, error: 'Hand is complete' };
   }
 
   // Create new state
@@ -162,6 +185,9 @@ export function executePlayerAction(
 function executeFold(gameState: GameState, playerIndex: number): PlayerActionResult {
   const player = gameState.players[playerIndex];
   player.folded = true;
+  
+  // Mark player as having acted
+  gameState.playersActed[playerIndex] = true;
 
   // Check if opponent folded - if so, they win
   const opponent = gameState.players[1 - playerIndex];
@@ -169,6 +195,12 @@ function executeFold(gameState: GameState, playerIndex: number): PlayerActionRes
     opponent.chips += gameState.pot;
     gameState.winner = 1 - playerIndex;
     gameState.winnerReason = 'opponent folded';
+    
+    // Reset betting state after completion
+    gameState.pot = 0;
+    gameState.currentBet = 0;
+    gameState.players.forEach(p => p.currentBet = 0);
+    
     gameState.phase = 'complete';
   } else {
     // Move to next player if game continues
@@ -185,9 +217,12 @@ function executeCall(gameState: GameState, playerIndex: number): PlayerActionRes
   const player = gameState.players[playerIndex];
   const callAmount = gameState.currentBet - player.currentBet;
 
+  // Mark player as having acted
+  gameState.playersActed[playerIndex] = true;
+
   // Check if player has enough chips
-  if (callAmount > player.chips) {
-    // All-in
+  if (callAmount >= player.chips) {
+    // All-in (when call amount equals or exceeds remaining chips)
     gameState.pot += player.chips;
     player.currentBet += player.chips;
     player.chips = 0;
@@ -203,6 +238,8 @@ function executeCall(gameState: GameState, playerIndex: number): PlayerActionRes
   const result = checkBettingRoundComplete(gameState);
   if (result.bettingComplete) {
     advancePhase(gameState);
+    // Check if all players are all-in and auto-advance if needed
+    autoAdvanceIfAllIn(gameState);
   } else {
     // Move to next player
     gameState.activePlayerIndex = getNextActivePlayer(gameState, playerIndex);
@@ -219,14 +256,21 @@ function executeRaise(gameState: GameState, playerIndex: number, amount?: number
     return { success: false, gameState, error: 'Raise amount required' };
   }
 
-  const player = gameState.players[playerIndex];
-  
-  // Check minimum raise (must be at least current bet + big blind, or double current bet if current bet > 0)
-  const minRaise = gameState.currentBet > 0 ? gameState.currentBet * 2 : BIG_BLIND;
-  if (amount < minRaise) {
-    return { success: false, gameState, error: 'minimum raise' };
+  // Validate raise amount is positive and meaningful
+  if (amount <= 0) {
+    return { success: false, gameState, error: 'Raise amount must be positive' };
   }
 
+  const player = gameState.players[playerIndex];
+  
+  // Basic validation: can't raise to less than current bet
+  if (amount <= gameState.currentBet) {
+    return { success: false, gameState, error: 'Raise must be higher than current bet' };
+  }
+  
+  // Mark player as having acted
+  gameState.playersActed[playerIndex] = true;
+  
   // Total amount to put in pot for this raise
   let totalAmountNeeded = amount - player.currentBet;
   let finalAmount = amount;
@@ -238,12 +282,25 @@ function executeRaise(gameState: GameState, playerIndex: number, amount?: number
     totalAmountNeeded = player.chips;
   }
   
+  // Check if this is actually a raise or just a call/all-in that doesn't raise the bet
+  const isActualRaise = finalAmount > gameState.currentBet;
+  
+  // If it's an actual raise, check minimum raise amount
+  if (isActualRaise) {
+    const minRaise = gameState.currentBet > 0 ? gameState.currentBet * 2 : BIG_BLIND;
+    if (finalAmount < minRaise) {
+      return { success: false, gameState, error: `Minimum raise is $${minRaise}` };
+    }
+  }
+  
   // Handle all-in scenario
   if (totalAmountNeeded === player.chips) {
     // Player goes all-in
     gameState.pot += player.chips;
     player.currentBet += player.chips;
-    gameState.currentBet = Math.max(gameState.currentBet, player.currentBet);
+    if (isActualRaise) {
+      gameState.currentBet = player.currentBet;
+    }
     player.chips = 0;
     player.allIn = true;
   } else {
@@ -254,8 +311,20 @@ function executeRaise(gameState: GameState, playerIndex: number, amount?: number
     gameState.currentBet = finalAmount;
   }
 
+  // Only reset other players' acted status if this was an actual raise
+  if (isActualRaise) {
+    for (let i = 0; i < gameState.playersActed.length; i++) {
+      if (i !== playerIndex) {
+        gameState.playersActed[i] = false;
+      }
+    }
+  }
+
   // Move to next player
   gameState.activePlayerIndex = getNextActivePlayer(gameState, playerIndex);
+
+  // Check if all players are all-in and auto-advance if needed
+  autoAdvanceIfAllIn(gameState);
 
   return { success: true, gameState };
 }
@@ -276,21 +345,44 @@ function checkBettingRoundComplete(gameState: GameState): { bettingComplete: boo
     p.currentBet === gameState.currentBet || p.allIn
   );
 
-  // For preflop, small blind must have acted to match big blind
+  // For preflop, both players must have acted (except if one folded)
   if (gameState.phase === 'preflop') {
-    const smallBlind = gameState.players[0];
-    // Small blind has acted if they called/raised or folded
-    const smallBlindActed = smallBlind.currentBet >= BIG_BLIND || smallBlind.folded;
-    return { bettingComplete: smallBlindActed && allMatched };
+    // Find dealer index to determine which player is which
+    const smallBlindIndex = gameState.dealerIndex;
+    const bigBlindIndex = (gameState.dealerIndex + 1) % 2;
+    
+    // Both players must have acted for round to be complete
+    const smallBlindActed = gameState.playersActed[smallBlindIndex] || gameState.players[smallBlindIndex].folded;
+    const bigBlindActed = gameState.playersActed[bigBlindIndex] || gameState.players[bigBlindIndex].folded;
+    
+    // Round is complete when both have acted and bets are matched
+    if (smallBlindActed && bigBlindActed && allMatched) {
+      return { bettingComplete: true };
+    }
+    
+    return { bettingComplete: false };
   }
 
-  return { bettingComplete: allMatched };
+  // For post-flop rounds, all players must have acted and have matching bets
+  const allActivePlayersActed = activePlayers.every((p) => {
+    const playerIndex = gameState.players.findIndex(player => player.id === p.id);
+    return gameState.playersActed[playerIndex] || p.allIn;
+  });
+
+  return { bettingComplete: allActivePlayersActed && allMatched };
 }
 
 /**
  * Get next active player index
  */
 function getNextActivePlayer(gameState: GameState, currentIndex: number): number {
+  // Check if there are any active players who can still act
+  const hasActivePlayer = gameState.players.some(p => !p.folded && !p.allIn);
+  if (!hasActivePlayer) {
+    // No active players, return current index (betting round should end)
+    return currentIndex;
+  }
+  
   const nextIndex = (currentIndex + 1) % gameState.players.length;
   const nextPlayer = gameState.players[nextIndex];
   
@@ -308,6 +400,9 @@ function advancePhase(gameState: GameState): void {
   // Reset betting for next round
   gameState.players.forEach(p => p.currentBet = 0);
   gameState.currentBet = 0;
+  
+  // Reset players acted for new betting round
+  gameState.playersActed = gameState.playersActed.map(() => false);
 
   switch (gameState.phase) {
     case 'preflop':
@@ -335,6 +430,35 @@ function advancePhase(gameState: GameState): void {
   // Set active player (big blind acts first post-flop)
   if (gameState.phase !== 'complete' && gameState.phase !== 'showdown') {
     gameState.activePlayerIndex = getFirstToActPostFlop(gameState);
+  }
+}
+
+/**
+ * Check if all remaining players are all-in and auto-advance to showdown
+ */
+function autoAdvanceIfAllIn(gameState: GameState): void {
+  const activePlayers = gameState.players.filter(p => !p.folded);
+  const allPlayersAllIn = activePlayers.every(p => p.allIn);
+  
+  if (allPlayersAllIn && gameState.phase !== 'complete' && gameState.phase !== 'showdown') {
+    // Auto-advance through all remaining phases since no more betting is possible
+    // Auto-advance through all remaining phases since no more betting is possible
+    if (gameState.phase === 'preflop') {
+      dealFlop(gameState);
+      gameState.phase = 'flop';
+    }
+    if (gameState.phase === 'flop') {
+      dealTurn(gameState);
+      gameState.phase = 'turn';
+    }
+    if (gameState.phase === 'turn') {
+      dealRiver(gameState);
+      gameState.phase = 'river';
+    }
+    if (gameState.phase === 'river') {
+      gameState.phase = 'showdown';
+      determineWinner(gameState);
+    }
   }
 }
 
@@ -369,14 +493,21 @@ function dealRiver(gameState: GameState): void {
  * Get first player to act post-flop (big blind position)
  */
 function getFirstToActPostFlop(gameState: GameState): number {
-  // Big blind is player 1, but if they folded, go to next active player
-  if (!gameState.players[1].folded && !gameState.players[1].allIn) {
-    return 1;
+  // In heads-up, big blind (non-dealer) acts first post-flop
+  const bigBlindIndex = (gameState.dealerIndex + 1) % 2;
+  
+  // If big blind can act, they go first
+  if (!gameState.players[bigBlindIndex].folded && !gameState.players[bigBlindIndex].allIn) {
+    return bigBlindIndex;
   }
-  if (!gameState.players[0].folded && !gameState.players[0].allIn) {
-    return 0;
+  
+  // Otherwise, the small blind (dealer) acts
+  const smallBlindIndex = gameState.dealerIndex;
+  if (!gameState.players[smallBlindIndex].folded && !gameState.players[smallBlindIndex].allIn) {
+    return smallBlindIndex;
   }
-  return 0; // Fallback
+  
+  return bigBlindIndex; // Fallback
 }
 
 /**
@@ -390,6 +521,12 @@ export function determineWinner(gameState: GameState): void {
     gameState.winner = winnerIndex;
     gameState.winnerReason = 'opponent folded';
     gameState.players[winnerIndex].chips += gameState.pot;
+    
+    // Reset betting state after completion
+    gameState.pot = 0;
+    gameState.currentBet = 0;
+    gameState.players.forEach(p => p.currentBet = 0);
+    
     gameState.phase = 'complete';
     return;
   }
@@ -435,5 +572,49 @@ export function determineWinner(gameState: GameState): void {
     gameState.winnerReason = 'split pot';
   }
 
+  // Reset betting state after completion
+  gameState.pot = 0;
+  gameState.currentBet = 0;
+  gameState.players.forEach(p => p.currentBet = 0);
+
   gameState.phase = 'complete';
+}
+
+/**
+ * Start a new hand after the current one is complete
+ */
+export function startNewHand(gameState: GameState): GameState {
+  if (gameState.phase !== 'complete') {
+    throw new Error('Cannot start new hand: current hand is not complete');
+  }
+
+  // Check if players have enough chips to continue
+  const playersWithChips = gameState.players.filter(p => p.chips >= BIG_BLIND);
+  if (playersWithChips.length < 2) {
+    throw new Error('Not enough players have chips to continue');
+  }
+
+  // Reset game state and automatically deal new hand
+  const resetState = {
+    ...gameState,
+    communityCards: [] as Card[],
+    pot: 0,
+    currentBet: 0,
+    activePlayerIndex: -1,
+    phase: 'waiting' as const,
+    winner: undefined,
+    winnerReason: undefined,
+    deck: createDeck(),
+    playersActed: [false, false],
+    players: gameState.players.map(player => ({
+      ...player,
+      holeCards: [] as Card[],
+      currentBet: 0,
+      folded: false,
+      allIn: false
+    }))
+  };
+
+  // Automatically deal the new hand
+  return dealNewHand(resetState);
 }

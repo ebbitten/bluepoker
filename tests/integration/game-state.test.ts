@@ -71,7 +71,7 @@ describe('Game State API Integration', () => {
       const data = await response.json();
       expect(data.gameId).toBe(gameId);
       expect(data.players).toHaveLength(2);
-      expect(data.phase).toBe('preflop');
+      expect(data.phase).toBe('waiting');
     });
 
     it('should return 404 for non-existent game', async () => {
@@ -253,6 +253,17 @@ describe('Game State API Integration', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           playerId: smallBlind.id,
+          action: 'call'
+        })
+      });
+      
+      // Big blind calls (effectively checks since they already have $20 in pot)
+      const bigBlindPlayer = gameState.players[1];
+      await fetch(`${baseUrl}/${gameId}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: bigBlindPlayer.id,
           action: 'call'
         })
       });

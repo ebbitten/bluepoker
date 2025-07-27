@@ -6,6 +6,16 @@
     "build": "pnpm --filter app build",
     "start": "pnpm --filter app start",
     "test": "pnpm --filter app test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:auth": "./scripts/test-auth-comprehensive.sh",
+    "test:auth:api": "./scripts/test-auth-automated.sh",
+    "test:auth:unit": "./scripts/test-auth-comprehensive.sh unit",
+    "test:auth:integration": "./scripts/test-auth-comprehensive.sh integration",
+    "test:auth:e2e": "./scripts/test-auth-comprehensive.sh e2e",
+    "test:auth:security": "./scripts/test-auth-comprehensive.sh security",
+    "test:all-with-auth": "pnpm validate && pnpm test:auth",
     "lint": "pnpm --filter '*' lint",
     "typecheck": "pnpm --filter '*' typecheck",
     "format": "prettier --write .",
@@ -14,11 +24,19 @@
     "quality-check": "pnpm lint && pnpm typecheck"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
     "prettier": "^3.1.1",
     "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=8.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.52.0",
+    "clsx": "^2.1.1",
+    "eventsource": "^4.0.0",
+    "node-fetch": "^3.3.2",
+    "tailwind-merge": "^3.3.1"
   }
 }

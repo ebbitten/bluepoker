@@ -113,3 +113,42 @@ yarn.lock
 app@*
 bluepoker@*
 *@*.*.*
+
+# Development and testing artifacts
+debug-*.js
+test-*.js
+*-debug.js
+*-test.js
+
+# Documentation artifacts (session-specific)
+AUTHENTICATION-TESTING-COMPLETE.md
+AUTOMATED-TESTING-IMPLEMENTATION-PLAN.md
+COMPREHENSIVE-*.md
+FIXES-COMPLETED-SUCCESS-REPORT.md
+NEXT-SESSION-*.md
+PERMISSION-PREVENTION-SYSTEM.md
+PHASE-*-FINDINGS.md
+PRODUCTION-SAFE-COMMANDS.md
+RESUME_NOTES.md
+TESTING-VALIDATION-REPORT.md
+TESTING.md
+
+# Server logs
+server.log
+websocket.log
+
+# Backup and temporary project files
+*.bak
+*.tmp
+current-sprint.txt
+backlog.txt
+instructions
+notes/
+
+# Keep important directories tracked
+!docs/
+!scripts/
+!supabase/migrations/
+!packages/app/src/
+!packages/shared/src/
+!tests/

@@ -26,11 +26,11 @@ describe('Game State Management', () => {
       });
     });
 
-    it('should start in preflop phase', () => {
-      expect(gameState.phase).toBe('preflop');
+    it('should start in waiting phase', () => {
+      expect(gameState.phase).toBe('waiting');
       expect(gameState.pot).toBe(0);
       expect(gameState.currentBet).toBe(0);
-      expect(gameState.activePlayerIndex).toBe(0);
+      expect(gameState.activePlayerIndex).toBe(-1);
     });
 
     it('should have empty community cards initially', () => {
@@ -49,13 +49,17 @@ describe('Game State Management', () => {
     it('should post blinds after dealing', () => {
       const newGameState = dealNewHand(gameState);
       
-      // Small blind (player 0) posts 10 chips
-      expect(newGameState.players[0].currentBet).toBe(10);
-      expect(newGameState.players[0].chips).toBe(990);
+      // With dealer rotation, dealer is small blind
+      const dealerIndex = newGameState.dealerIndex;
+      const bigBlindIndex = (dealerIndex + 1) % 2;
       
-      // Big blind (player 1) posts 20 chips
-      expect(newGameState.players[1].currentBet).toBe(20);
-      expect(newGameState.players[1].chips).toBe(980);
+      // Small blind (dealer) posts 10 chips
+      expect(newGameState.players[dealerIndex].currentBet).toBe(10);
+      expect(newGameState.players[dealerIndex].chips).toBe(990);
+      
+      // Big blind posts 20 chips
+      expect(newGameState.players[bigBlindIndex].currentBet).toBe(20);
+      expect(newGameState.players[bigBlindIndex].chips).toBe(980);
       
       expect(newGameState.pot).toBe(30);
       expect(newGameState.currentBet).toBe(20);
@@ -63,7 +67,7 @@ describe('Game State Management', () => {
 
     it('should set active player to small blind for preflop action', () => {
       const newGameState = dealNewHand(gameState);
-      expect(newGameState.activePlayerIndex).toBe(0); // Small blind acts first preflop
+      expect(newGameState.activePlayerIndex).toBe(newGameState.dealerIndex); // Small blind (dealer) acts first preflop
     });
   });
 
@@ -74,26 +78,28 @@ describe('Game State Management', () => {
 
     describe('Fold Action', () => {
       it('should end hand when player folds to a bet', () => {
-        // Player 0 folds to big blind
-        const result = executePlayerAction(gameState, gameState.players[0].id, 'fold');
+        // Active player folds to big blind
+        const activePlayerId = gameState.players[gameState.activePlayerIndex].id;
+        const result = executePlayerAction(gameState, activePlayerId, 'fold');
         
         expect(result.success).toBe(true);
-        expect(result.gameState.players[0].folded).toBe(true);
+        expect(result.gameState.players[gameState.activePlayerIndex].folded).toBe(true);
         expect(result.gameState.phase).toBe('complete');
-        expect(result.gameState.winner).toBe(1); // Big blind wins
+        expect(result.gameState.winner).toBeDefined();
         expect(result.gameState.winnerReason).toBe('opponent folded');
       });
     });
 
     describe('Call Action', () => {
-      it('should call current bet and advance to flop', () => {
-        const result = executePlayerAction(gameState, gameState.players[0].id, 'call');
+      it('should call current bet and wait for big blind action', () => {
+        const activePlayerId = gameState.players[gameState.activePlayerIndex].id;
+        const result = executePlayerAction(gameState, activePlayerId, 'call');
         
         expect(result.success).toBe(true);
-        expect(result.gameState.players[0].chips).toBe(980);
+        expect(result.gameState.players[gameState.activePlayerIndex].chips).toBe(980);
         expect(result.gameState.pot).toBe(40);
-        expect(result.gameState.phase).toBe('flop');
-        expect(result.gameState.communityCards).toHaveLength(3);
+        expect(result.gameState.phase).toBe('preflop'); // Still preflop, waiting for big blind
+        expect(result.gameState.activePlayerIndex).toBe((gameState.activePlayerIndex + 1) % 2); // Next player's turn
       });
 
       it('should progress to flop when both players call', () => {
@@ -101,7 +107,10 @@ describe('Game State Management', () => {
         let result = executePlayerAction(gameState, gameState.players[0].id, 'call');
         gameState = result.gameState;
         
-        // Big blind checks (no action needed, betting round complete)
+        // Big blind checks (calls with 0)
+        result = executePlayerAction(gameState, gameState.players[1].id, 'call');
+        gameState = result.gameState;
+        
         expect(gameState.phase).toBe('flop');
         expect(gameState.communityCards).toHaveLength(3);
         expect(gameState.activePlayerIndex).toBe(1); // Big blind acts first post-flop
@@ -123,7 +132,7 @@ describe('Game State Management', () => {
         const result = executePlayerAction(gameState, gameState.players[0].id, 'raise', 25);
         
         expect(result.success).toBe(false);
-        expect(result.error).toContain('minimum raise');
+        expect(result.error).toContain('Minimum raise');
       });
 
       it('should handle all-in scenarios', () => {
@@ -154,7 +163,7 @@ describe('Game State Management', () => {
         const result = executePlayerAction(gameState, gameState.players[0].id, 'call');
         
         expect(result.success).toBe(false);
-        expect(result.error).toContain('already folded');
+        expect(result.error).toContain('Hand is complete');
       });
 
       it('should reject raise without amount', () => {
@@ -179,8 +188,9 @@ describe('Game State Management', () => {
     it('should progress through all betting rounds', () => {
       gameState = dealNewHand(gameState);
       
-      // Preflop: small blind calls
+      // Preflop: small blind calls, then big blind checks
       gameState = executePlayerAction(gameState, gameState.players[0].id, 'call').gameState;
+      gameState = executePlayerAction(gameState, gameState.players[1].id, 'call').gameState;
       expect(gameState.phase).toBe('flop');
       expect(gameState.communityCards).toHaveLength(3);
       

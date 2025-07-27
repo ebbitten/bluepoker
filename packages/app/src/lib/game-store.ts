@@ -1,35 +1,62 @@
 /**
- * In-memory game state storage
- * In production, this would be replaced with a database
+ * In-memory game state storage with persistence integration
+ * Maintains in-memory state for performance while providing persistence for durability
  */
 
 import { GameState } from '@bluepoker/shared';
+import { gamePersistenceService } from './persistence-service';
 
-// Global game storage
-const games = new Map<string, GameState>();
+// Use global to persist across Next.js hot reloads
+declare global {
+  // eslint-disable-next-line no-var
+  var __gameStore: Map<string, GameState> | undefined;
+}
+
+function getGameStore(): Map<string, GameState> {
+  if (!global.__gameStore) {
+    global.__gameStore = new Map<string, GameState>();
+  }
+  return global.__gameStore;
+}
 
 export const gameStore = {
   get: (gameId: string): GameState | undefined => {
-    return games.get(gameId);
+    const store = getGameStore();
+    const result = store.get(gameId);
+    return result;
   },
 
   set: (gameId: string, gameState: GameState): void => {
-    games.set(gameId, gameState);
+    const store = getGameStore();
+    store.set(gameId, gameState);
+    
+    // Auto-persist game state changes
+    gamePersistenceService.autoPerist(gameId, gameState);
   },
 
   has: (gameId: string): boolean => {
-    return games.has(gameId);
+    const store = getGameStore();
+    return store.has(gameId);
   },
 
   delete: (gameId: string): boolean => {
-    return games.delete(gameId);
+    const store = getGameStore();
+    const result = store.delete(gameId);
+    return result;
   },
 
   clear: (): void => {
-    games.clear();
+    const store = getGameStore();
+    store.clear();
   },
 
   size: (): number => {
-    return games.size;
+    const store = getGameStore();
+    return store.size;
+  },
+
+  getAllGameIds: (): string[] => {
+    const store = getGameStore();
+    return Array.from(store.keys());
   }
 };

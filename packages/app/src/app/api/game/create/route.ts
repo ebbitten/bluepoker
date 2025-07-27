@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createGame } from '@bluepoker/shared';
 import { randomUUID } from 'crypto';
 import { gameStore } from '../../../../lib/game-store';
+import { withAuth } from '../../../../lib/auth-middleware';
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, user) => {
   try {
     const body = await request.json();
     const { playerNames } = body;
@@ -23,9 +24,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify that the authenticated user is one of the players
+    if (!playerNames.includes(user.username)) {
+      return NextResponse.json(
+        { error: 'You can only create games where you are a player' },
+        { status: 403 }
+      );
+    }
+
     // Create new game
     const gameId = randomUUID();
     const gameState = createGame(gameId, playerNames as [string, string]);
+    
+    // Add user IDs to players for authentication
+    gameState.players.forEach(player => {
+      if (player.name === user.username) {
+        player.userId = user.id;
+      }
+    });
     
     // Store game
     gameStore.set(gameId, gameState);
@@ -41,4 +57,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
